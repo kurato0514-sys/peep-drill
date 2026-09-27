@@ -1,0 +1,31 @@
+{
+  "name": "ぴーぷくんの呼吸ドリル",
+  "short_name": "呼吸ドリル",
+  "description": "三学会合同呼吸療法認定士の暗記カードと問題",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef7f4",
+  "theme_color": "#169688",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

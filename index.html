@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ぴーぷくんの呼吸ドリル</title>
+<meta name="description" content="三学会合同呼吸療法認定士の暗記カードと問題。ひといきPT（すーさん）と相棒ぴーぷくんのドリル。">
+<meta name="theme-color" content="#169688">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <button id="back" class="icon-btn" aria-label="もどる" hidden>‹</button>
+  <h1 id="title">ぴーぷくんの呼吸ドリル</h1>
+  <span class="spacer"></span>
+</header>
+
+<main id="view"></main>
+
+<template id="tpl-home">
+  <section class="hero">
+    <img src="icon-192.png" alt="" class="avatar">
+    <div class="bubble">
+      <b>ぴーぷくん</b>
+      <p id="peep-hello">今日も圧をかけておきますぴーぷ</p>
+    </div>
+  </section>
+
+  <section id="reward" class="reward"></section>
+
+  <section id="weak" class="weak"></section>
+
+  <div class="modes">
+    <button class="mode" data-go="cards">
+      <span class="mode-emoji">🃏</span>
+      <span class="mode-name">暗記カード</span>
+      <span class="mode-sub">覚えるしかないものは、カードで</span>
+    </button>
+    <button class="mode" data-go="quiz">
+      <span class="mode-emoji">✏️</span>
+      <span class="mode-name">問題を解く</span>
+      <span class="mode-sub">理解するものは、問題で</span>
+    </button>
+    <button class="mode" data-go="exam">
+      <span class="mode-emoji">⏱️</span>
+      <span class="mode-name">試験モード</span>
+      <span class="mode-sub">本番と同じ100問・170分。最後に答え合わせ</span>
+    </button>
+    <button class="mode" data-go="own">
+      <span class="mode-emoji">✍️</span>
+      <span class="mode-name">自作の問題・カード</span>
+      <span class="mode-sub">間違えたところは、自分で問題にする</span>
+    </button>
+    <button class="mode" data-go="stats">
+      <span class="mode-emoji">📊</span>
+      <span class="mode-name">マイページ</span>
+      <span class="mode-sub">分野ごとの正解率。90%以上は卒業</span>
+    </button>
+  </div>
+
+  <section class="card-box unlock">
+    <h2>合言葉</h2>
+    <p id="unlock-state" class="muted"></p>
+    <form id="unlock-form">
+      <input id="pass" type="password" autocomplete="off" placeholder="合言葉を入力">
+      <button type="submit" class="btn">ひらく</button>
+    </form>
+  </section>
+
+  <p class="foot muted">内容は公開資料で確認したものです。臨床の判断は、必ず最新のガイドラインと施設の決まりに従ってください。<br><button class="linkish" data-go="terms">利用規約・お問い合わせ</button></p>
+</template>
+
+<script src="app.js" type="module"></script>
+</body>
+</html>
