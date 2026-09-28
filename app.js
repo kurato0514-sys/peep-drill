@@ -620,6 +620,13 @@ routes.quiz_play = qs => {
 
 // ---------- 試験モード（本番：100問・170分。最後にまとめて答え合わせ） ----------
 const EXAM_Q = 100, EXAM_MIN = 170;
+const EXAM_PER_CH = 5; // 20分野から5問ずつ（本番の分野ごとの配分は公表されていないので均等にする）
+// 分野ごとに5問ずつランダムに選び、全体の順番もランダムにする（足りない分野は、ある分だけ）
+function pickExam(pool) {
+  const picked = [];
+  for (const c of CHAPTERS) picked.push(...shuffle(pool.filter(q => q.chapter === c)).slice(0, EXAM_PER_CH));
+  return shuffle(picked);
+}
 let examTimer = null;
 // 一時停止：止めた時刻を覚え、再開したら止めていた分だけ開始時刻を後ろにずらす
 function pauseExam() { const r = state.examRun; if (r && !r.pausedAt) { r.pausedAt = Date.now(); save(); } }
@@ -631,7 +638,7 @@ const fmtTime = sec => { sec = Math.max(0, Math.round(sec)); const h = Math.floo
 routes.exam = () => {
   setTitle('試験モード');
   const pool = allQuestions().filter(q => !q.own);
-  const n = Math.min(EXAM_Q, pool.length);
+  const n = CHAPTERS.reduce((a, c) => a + Math.min(EXAM_PER_CH, pool.filter(q => q.chapter === c).length), 0);
   const limitSec = Math.round(EXAM_MIN * 60 * n / EXAM_Q);
   const run = state.examRun;
   view.append(
@@ -641,16 +648,17 @@ routes.exam = () => {
         el('div', {}, el('span', { class: 'muted' }, '問題数'), el('b', {}, `${n}問`)),
         el('div', {}, el('span', { class: 'muted' }, '制限時間'), el('b', {}, `${fmtTime(limitSec)}`))),
       el('p', { class: 'muted' }, n < EXAM_Q
-        ? `本番は${EXAM_Q}問・${EXAM_MIN}分（2時間50分）です。今そろっている問題が${pool.length}問なので、同じ割合（1問あたり1.7分）で出題します。問題は有料記事と一緒に増えていきます。`
+        ? `本番は${EXAM_Q}問・${EXAM_MIN}分（2時間50分）です。今ひらいている問題から、20分野それぞれ最大${EXAM_PER_CH}問を選ぶと${n}問なので、同じ割合（1問あたり1.7分）で出題します。`
         : `本番と同じ${EXAM_Q}問・${EXAM_MIN}分（2時間50分）です。`),
       el('ul', { class: 'exam-rules' },
+        el('li', {}, `20分野から${EXAM_PER_CH}問ずつ選び、分野をまぜた順番で出題します。`),
         el('li', {}, '途中で答えは出ません。最後にまとめて答え合わせします。'),
         el('li', {}, '「あとで見直す」の印をつけて、問題一覧から戻れます。'),
         el('li', {}, '時間になると、自動で終了して採点します。'),
         el('li', {}, '「⏸ 一時停止」で時間を止められます。試験の画面を離れたり、ほかのアプリに切りかえたりしても、自動で止まります。'),
         el('li', {}, '自作の問題は入りません。')),
       el('button', { class: 'btn wide', disabled: n === 0, onclick: () => {
-        const qs = shuffle(pool).slice(0, n).map(q => q.id);
+        const qs = pickExam(pool).map(q => q.id);
         state.examRun = { ids: qs, answers: {}, flags: {}, start: Date.now(), limit: limitSec, cur: 0 }; save();
         go('exam_play');
       } }, '試験をはじめる'),
