@@ -331,3 +331,6 @@ table.contents thead th { font-size: 12px; }
 .flash { position: relative; }
 .fav-btn { position: absolute; top: 8px; right: 10px; background: none; border: 0; font-size: 26px; line-height: 1; color: var(--muted); cursor: pointer; padding: 4px; }
 .fav-btn[aria-pressed="true"] { color: #e0a800; }
+
+.prev-row { margin-top: 10px; }
+.prev-btn { width: 100%; padding: 8px; font-size: 14px; }

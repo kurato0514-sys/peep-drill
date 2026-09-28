@@ -409,6 +409,7 @@ routes.cards_play = arg => {
   const keep = () => { run.seen = [...seen]; state.cardRun = run; save(); };
   keep();
   let flipped = false, looked = false;
+  const history = []; // 1つ前に戻るための記録（この回の中だけ）
   const box = el('div', { class: 'card-box flash' });
   const prog = el('div', { class: 'progress' });
   const row = el('div', { class: 'row' });
@@ -438,8 +439,21 @@ routes.cards_play = arg => {
       el('button', { class: 'btn ghost', onclick: () => mark('again') }, 'まだ 😪（あとでもう一度）'),
       el('button', { class: 'btn', onclick: () => mark('known') }, '覚えた ✨'),
     );
+    backRow.innerHTML = '';
+    if (history.length) backRow.append(el('button', { class: 'btn ghost prev-btn', onclick: undo }, '‹ 1つ前のカードにもどる'));
+  };
+  const undo = () => {
+    const h = history.pop();
+    if (!h) return;
+    run.queue = h.queue; run.firstKnown = h.firstKnown;
+    seen.clear(); h.seen.forEach(x => seen.add(x));
+    if (h.prev === undefined) delete state.cards[h.id]; else state.cards[h.id] = h.prev;
+    flipped = false; looked = false;
+    keep(); render();
   };
   const mark = v => {
+    history.push({ id: run.queue[0], prev: state.cards[run.queue[0]], queue: run.queue.slice(), firstKnown: run.firstKnown, seen: [...seen] });
+    if (history.length > 100) history.shift();
     const id = run.queue.shift();
     state.cards[id] = v;
     if (v === 'known') { if (!seen.has(id)) run.firstKnown++; }
@@ -461,8 +475,9 @@ routes.cards_play = arg => {
       el('button', { class: 'btn wide', onclick: () => backBtn.click() }, '分野選びにもどる'),
     ));
   };
+  const backRow = el('div', { class: 'prev-row' });
   box.addEventListener('click', () => { flipped = !flipped; looked = true; render(); });
-  view.append(prog, box, row);
+  view.append(prog, box, row, backRow);
   if (!run.queue.length) return done();
   render();
 };
