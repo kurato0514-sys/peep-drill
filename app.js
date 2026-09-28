@@ -356,6 +356,16 @@ function cardsMenu() {
     locked.length ? el('p', { class: 'muted' }, '🔒 の分野は、合言葉でひらきます。') : null,
   );
 }
+// 穴埋めカード：{{ }} の部分を、表では空欄、裏では色つきの答えにして文ごと見せる
+function clozeFace(text, reveal) {
+  const face = el('div', { class: 'face cloze' });
+  text.split(/(\{\{.+?\}\})/).forEach(part => {
+    const m = part.match(/^\{\{(.+)\}\}$/);
+    if (!m) { if (part) face.append(document.createTextNode(part)); return; }
+    face.append(el('span', { class: reveal ? 'blank shown' : 'blank' }, reveal ? m[1] : '？'));
+  });
+  return face;
+}
 routes.cards_play = deck => {
   setTitle('暗記カード');
   let i = 0, flipped = false, seen = false, knownNow = 0;
@@ -367,16 +377,16 @@ routes.cards_play = deck => {
     prog.textContent = `${i + 1} / ${deck.length}`;
     box.innerHTML = '';
     box.classList.toggle('is-back', flipped);
-    box.append(el('div', { class: 'cat' }, `${isArticle(c) ? '📝記事　' : ''}${cardKey(c)}　${flipped ? 'うら（答え）' : 'おもて（問い）'}`));
+    box.append(el('div', { class: 'cat' }, `${isArticle(c) ? '📝記事　' : ''}${cardKey(c)}　${flipped ? 'うら' : 'おもて'}`));
     if (!flipped) {
-      box.append(el('div', { class: 'face' }, c.front));
+      box.append(c.cloze ? clozeFace(c.cloze, false) : el('div', { class: `face${c.type === 'term' ? ' term' : ''}` }, c.front));
     } else {
-      box.append(el('div', { class: 'face back' }, c.back));
+      box.append(c.cloze ? clozeFace(c.cloze, true) : el('div', { class: 'face back' }, c.back));
       if (c.note) box.append(el('div', { class: 'note' }, c.note));
       if (c.source) box.append(el('div', { class: 'src' }, `根拠：${c.source}（${c.checked}確認）`));
       if (c.own) box.append(el('div', { class: 'src' }, '✍️ 自作のカード'));
     }
-    box.append(el('div', { class: 'note flip-hint' }, flipped ? 'タップで問いにもどる' : 'タップで答え'));
+    box.append(el('div', { class: 'note flip-hint' }, flipped ? 'タップでおもてにもどる' : 'タップでうらを見る'));
     row.innerHTML = '';
     if (seen) row.append(
       el('button', { class: 'btn ghost', onclick: () => mark('again') }, 'まだ 😪'),

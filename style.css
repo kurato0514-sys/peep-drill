@@ -320,3 +320,9 @@ table.contents thead th { font-size: 12px; }
 /* 図を見て答える問題 */
 .q-img-link { display: block; margin: 10px 0 4px; }
 .q-img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
+
+/* 暗記カード：穴埋めと単語帳 */
+.flash .face.cloze { font-size: 19px; font-weight: 400; line-height: 1.9; text-align: left; }
+.flash .blank { display: inline-block; min-width: 3.2em; padding: 0 .4em; margin: 0 .15em; border-bottom: 2px solid var(--teal); color: var(--muted); text-align: center; font-weight: 700; }
+.flash .blank.shown { background: color-mix(in srgb, var(--teal) 16%, transparent); color: var(--ink); border-radius: 4px; }
+.flash .face.term { font-size: 28px; }
