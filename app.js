@@ -64,12 +64,13 @@ function normalizeState(st) {
   const obj = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
   const arr = v => (Array.isArray(v) ? v : []);
   return {
-    cards: obj(st.cards), quiz: obj(st.quiz),
+    cards: obj(st.cards), quiz: obj(st.quiz), favs: obj(st.favs),
     own: { cards: arr(st.own?.cards), questions: arr(st.own?.questions) },
     settings: st.settings && typeof st.settings === 'object' ? st.settings : null,
     reward: typeof st.reward === 'string' ? st.reward : '',
     exams: arr(st.exams), examRun: st.examRun && Array.isArray(st.examRun.ids) ? st.examRun : null,
     quizRun: st.quizRun && Array.isArray(st.quizRun.ids) ? st.quizRun : null,
+    cardRun: st.cardRun && Array.isArray(st.cardRun.queue) ? st.cardRun : null,
     log: arr(st.log).filter(e => e && typeof e.id === 'string'), ownInStats: !!st.ownInStats,
   };
 }
@@ -208,6 +209,8 @@ function home() {
   renderWeak($('#weak'));
   const rb = resumeBox(() => go('home', null, false));
   if (rb) $('#weak').after(rb);
+  const cb = cardResumeBox(() => go('home', null, false));
+  if (cb) $('#weak').after(cb);
   view.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
   const st = $('#unlock-state');
   const form = $('#unlock-form');
@@ -343,13 +346,20 @@ function cardsMenu() {
   );
   const again = el('button', { class: 'chip', 'aria-pressed': 'false' }, 'まだ覚えていないカードだけ');
   again.addEventListener('click', () => { onlyAgain = !onlyAgain; again.setAttribute('aria-pressed', onlyAgain); });
+  let onlyFav = false;
+  const favCount = allCards().filter(c => state.favs[c.id]).length;
+  const fav = el('button', { class: 'chip', 'aria-pressed': 'false', disabled: favCount === 0 }, `★ お気に入りだけ（${favCount}枚）`);
+  fav.addEventListener('click', () => { onlyFav = !onlyFav; fav.setAttribute('aria-pressed', onlyFav); });
   view.append(
-    el('p', { class: 'muted' }, '分野を選んで、スタート。タップで答えが出ます。'),
+    cardResumeBox(() => go('cards', null, false)),
+    el('p', { class: 'muted' }, '分野を選んで、スタート。タップでうらが出ます。「まだ」にしたカードは、その回の最後にもう一度出ます。'),
     chips,
-    el('div', { class: 'chips' }, again),
+    el('div', { class: 'chips' }, again, fav),
+    favCount === 0 ? el('p', { class: 'muted' }, 'カードをめくっているときに ☆ を押すと、お気に入りになります。') : null,
     el('button', { class: 'btn wide', onclick: () => {
       let deck = allCards().filter(c => picked.has(cardKey(c)));
       if (onlyAgain) deck = deck.filter(c => state.cards[c.id] !== 'known');
+      if (onlyFav) deck = deck.filter(c => state.favs[c.id]);
       if (!deck.length) return alertInline('カードがありませんぴーぷ');
       go('cards_play', shuffle(deck));
     } }, 'スタート'),
@@ -366,18 +376,54 @@ function clozeFace(text, reveal) {
   });
   return face;
 }
-routes.cards_play = deck => {
+// 途中でやめた暗記カードの続き（state.cardRun）
+function pendingCards() {
+  const r = state.cardRun;
+  if (!r) return null;
+  const left = r.queue.filter(id => allCards().some(c => c.id === id));
+  if (!left.length || left.length >= r.total && !r.seen?.length) return null; // まだ1枚もめくっていないものは続きにしない
+  return { left: left.length, total: r.total };
+}
+function cardResumeBox(onDiscard) {
+  const p = pendingCards();
+  if (!p) return null;
+  return el('div', { class: 'card-box resume' },
+    el('h2', {}, '暗記カードの続きがあります'),
+    el('p', { class: 'muted' }, `${p.total}枚のうち、まだ${p.left}枚残っています。続きからめくりますか？`),
+    el('div', { class: 'row' },
+      el('button', { class: 'btn ghost', onclick: () => { state.cardRun = null; save(); onDiscard(); } }, '新しく始める'),
+      el('button', { class: 'btn', onclick: () => go('cards_play', { resume: true }) }, '続きからめくる')));
+}
+// 「まだ」にしたカードは、その回の最後尾に回してもう一度出す。全部「覚えた」になったら終わり
+routes.cards_play = arg => {
   setTitle('暗記カード');
-  let i = 0, flipped = false, seen = false, knownNow = 0;
+  const byId = id => allCards().find(c => c.id === id);
+  let run;
+  if (arg && arg.resume && state.cardRun) {
+    run = state.cardRun;
+    run.queue = run.queue.filter(id => byId(id));
+  } else {
+    run = { queue: arg.map(c => c.id), total: arg.length, seen: [], firstKnown: 0 };
+  }
+  const seen = new Set(run.seen || []);
+  const keep = () => { run.seen = [...seen]; state.cardRun = run; save(); };
+  keep();
+  let flipped = false, looked = false;
   const box = el('div', { class: 'card-box flash' });
   const prog = el('div', { class: 'progress' });
   const row = el('div', { class: 'row' });
   const render = () => {
-    const c = deck[i];
-    prog.textContent = `${i + 1} / ${deck.length}`;
+    const c = byId(run.queue[0]);
+    prog.textContent = `覚えた ${run.total - run.queue.length} / ${run.total}枚　残り ${run.queue.length}枚`;
     box.innerHTML = '';
     box.classList.toggle('is-back', flipped);
-    box.append(el('div', { class: 'cat' }, `${isArticle(c) ? '📝記事　' : ''}${cardKey(c)}　${flipped ? 'うら' : 'おもて'}`));
+    const star = el('button', { class: 'fav-btn', 'aria-pressed': String(!!state.favs[c.id]), 'aria-label': 'お気に入り' }, state.favs[c.id] ? '★' : '☆');
+    star.addEventListener('click', e => {
+      e.stopPropagation(); // カードは裏返さない
+      if (state.favs[c.id]) delete state.favs[c.id]; else state.favs[c.id] = true;
+      save(); star.textContent = state.favs[c.id] ? '★' : '☆'; star.setAttribute('aria-pressed', String(!!state.favs[c.id]));
+    });
+    box.append(star, el('div', { class: 'cat' }, `${isArticle(c) ? '📝記事　' : ''}${cardKey(c)}　${flipped ? 'うら' : 'おもて'}${seen.has(c.id) ? '　（もう一度）' : ''}`));
     if (!flipped) {
       box.append(c.cloze ? clozeFace(c.cloze, false) : el('div', { class: `face${c.type === 'term' ? ' term' : ''}` }, c.front));
     } else {
@@ -388,30 +434,36 @@ routes.cards_play = deck => {
     }
     box.append(el('div', { class: 'note flip-hint' }, flipped ? 'タップでおもてにもどる' : 'タップでうらを見る'));
     row.innerHTML = '';
-    if (seen) row.append(
-      el('button', { class: 'btn ghost', onclick: () => mark('again') }, 'まだ 😪'),
+    if (looked) row.append(
+      el('button', { class: 'btn ghost', onclick: () => mark('again') }, 'まだ 😪（あとでもう一度）'),
       el('button', { class: 'btn', onclick: () => mark('known') }, '覚えた ✨'),
     );
   };
   const mark = v => {
-    state.cards[deck[i].id] = v; save();
-    if (v === 'known') knownNow++;
-    i++; flipped = false; seen = false;
-    if (i >= deck.length) return done();
+    const id = run.queue.shift();
+    state.cards[id] = v;
+    if (v === 'known') { if (!seen.has(id)) run.firstKnown++; }
+    else run.queue.push(id); // まだ → 最後尾へ
+    seen.add(id);
+    flipped = false; looked = false;
+    keep();
+    if (!run.queue.length) return done();
     render();
   };
   const done = () => {
+    state.cardRun = null; save();
     view.innerHTML = '';
-    const r = knownNow / deck.length;
+    const r = run.total ? run.firstKnown / run.total : 0;
     view.append(el('div', { class: 'card-box' },
       el('div', { class: 'big' }, `${Math.round(r * 100)}%`),
-      el('p', { style: 'text-align:center' }, '今回の覚えた率'),
-      peepBox(r >= 0.9 ? 'ほぼ覚えましたぴーぷ。寝落ちしてもいいですぴーぷ' : '「まだ」のカードだけで、もう1周ですぴーぷ'),
+      el('p', { style: 'text-align:center' }, `1回目で覚えた率（${run.total}枚をすべて覚えました）`),
+      peepBox(r >= 0.9 ? 'ほぼ一発ですぴーぷ。寝落ちしてもいいですぴーぷ' : '「まだ」を押したカードが、次に見直すところですぴーぷ'),
       el('button', { class: 'btn wide', onclick: () => backBtn.click() }, '分野選びにもどる'),
     ));
   };
-  box.addEventListener('click', () => { flipped = !flipped; seen = true; render(); });
+  box.addEventListener('click', () => { flipped = !flipped; looked = true; render(); });
   view.append(prog, box, row);
+  if (!run.queue.length) return done();
   render();
 };
 

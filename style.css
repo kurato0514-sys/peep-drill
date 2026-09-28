@@ -326,3 +326,8 @@ table.contents thead th { font-size: 12px; }
 .flash .blank { display: inline-block; min-width: 3.2em; padding: 0 .4em; margin: 0 .15em; border-bottom: 2px solid var(--teal); color: var(--muted); text-align: center; font-weight: 700; }
 .flash .blank.shown { background: color-mix(in srgb, var(--teal) 16%, transparent); color: var(--ink); border-radius: 4px; }
 .flash .face.term { font-size: 28px; }
+
+/* お気に入り */
+.flash { position: relative; }
+.fav-btn { position: absolute; top: 8px; right: 10px; background: none; border: 0; font-size: 26px; line-height: 1; color: var(--muted); cursor: pointer; padding: 4px; }
+.fav-btn[aria-pressed="true"] { color: #e0a800; }
