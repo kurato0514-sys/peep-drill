@@ -334,3 +334,5 @@ table.contents thead th { font-size: 12px; }
 
 .prev-row { margin-top: 10px; }
 .prev-btn { width: 100%; padding: 8px; font-size: 14px; }
+
+.flash .blank .hint { font-size: 12px; font-weight: 400; color: var(--muted); letter-spacing: .02em; }

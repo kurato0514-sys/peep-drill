@@ -372,7 +372,9 @@ function clozeFace(text, reveal) {
   text.split(/(\{\{.+?\}\})/).forEach(part => {
     const m = part.match(/^\{\{(.+)\}\}$/);
     if (!m) { if (part) face.append(document.createTextNode(part)); return; }
-    face.append(el('span', { class: reveal ? 'blank shown' : 'blank' }, reveal ? m[1] : '？'));
+    // {{答え|ヒント}}：表では答えの種類（数値・薬の名前など）を空欄に小さく出す
+    const [ans, hint] = m[1].split('|');
+    face.append(reveal ? el('span', { class: 'blank shown' }, ans) : el('span', { class: 'blank' }, hint ? el('small', { class: 'hint' }, hint) : '？'));
   });
   return face;
 }
