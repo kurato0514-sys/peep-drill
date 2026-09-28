@@ -335,7 +335,7 @@ function cardsMenu() {
     open.map(c => {
       const n = allCards().filter(x => cardKey(x) === c).length;
       const known = allCards().filter(x => cardKey(x) === c && state.cards[x.id] === 'known').length;
-      const b = el('button', { class: 'chip', 'aria-pressed': 'true' }, `${c}（${known}/${n}）`);
+      const b = el('button', { class: 'chip', 'aria-pressed': 'true' }, `${c}（覚えた率 ${n ? Math.round(known / n * 100) : 0}%）`);
       b.addEventListener('click', () => { picked.has(c) ? picked.delete(c) : picked.add(c); b.setAttribute('aria-pressed', picked.has(c)); });
       return b;
     }),
@@ -404,8 +404,8 @@ routes.cards_play = deck => {
     view.innerHTML = '';
     const r = knownNow / deck.length;
     view.append(el('div', { class: 'card-box' },
-      el('div', { class: 'big' }, `${knownNow} / ${deck.length}`),
-      el('p', { style: 'text-align:center' }, '覚えた枚数'),
+      el('div', { class: 'big' }, `${Math.round(r * 100)}%`),
+      el('p', { style: 'text-align:center' }, '今回の覚えた率'),
       peepBox(r >= 0.9 ? 'ほぼ覚えましたぴーぷ。寝落ちしてもいいですぴーぷ' : '「まだ」のカードだけで、もう1周ですぴーぷ'),
       el('button', { class: 'btn wide', onclick: () => backBtn.click() }, '分野選びにもどる'),
     ));
@@ -923,12 +923,12 @@ function stats() {
   }
   const prep = rows.filter(r => r.n === 0);
   if (prep.length) list.append(el('p', { class: 'muted prep' }, `準備中の分野（問題を順番に追加していきます）：${prep.map(r => r.c.slice(0, 2)).join('・')}`));
-  const cbox = el('div', { class: 'card-box' }, el('h2', {}, '暗記カード（覚えた割合）'));
+  const cbox = el('div', { class: 'card-box' }, el('h2', {}, '暗記カード（覚えた率）'));
   for (const c of cardCats().open) {
     const cs = allCards().filter(x => cardKey(x) === c);
     const k = cs.filter(x => state.cards[x.id] === 'known').length;
     const pct = Math.round(k / cs.length * 100);
-    cbox.append(el('div', { class: 'stat' }, el('span', {}, c), el('span', {}, `${k}/${cs.length}`),
+    cbox.append(el('div', { class: 'stat' }, el('span', {}, c), el('span', {}, `${pct}%`),
       el('div', { class: 'meter' }, el('i', { class: pct >= 90 ? 'grad' : '', style: `width:${pct}%` }))));
   }
   view.append(
