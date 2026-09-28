@@ -587,7 +587,7 @@ routes.quiz_play = qs => {
     view.append(
       el('div', { class: 'progress' }, `${q.own ? '✍️自作　' : ''}${isArticle(q) ? '📝記事　' : ''}${q.chapter}　${i + 1} / ${qs.length}${rec ? '　（見直し中）' : ''}`),
       el('div', { class: 'card-box' },
-        el('div', { class: 'q-text' }, q.question),
+        el('div', { class: 'q-text' }, q.question), qImg(q),
         multi ? el('p', { class: 'muted' }, `${answers.length}つ選んでください`) : null,
         el('div', { class: 'choices' }, btns),
         rec ? null : submit,
@@ -743,7 +743,7 @@ routes.exam_play = () => {
     body.append(
       el('div', { class: 'progress' }, `問${run.cur + 1} / ${qs.length}　${q.chapter}`),
       el('div', { class: 'card-box' },
-        el('div', { class: 'q-text' }, q.question),
+        el('div', { class: 'q-text' }, q.question), qImg(q),
         multi ? el('p', { class: 'muted' }, `${answers.length}つ選んでください`) : null,
         el('div', { class: 'choices' }, btns),
         el('div', { class: 'chips' }, flag)),
@@ -807,7 +807,7 @@ routes.exam_result = idx => {
     const q = allQuestions().find(x => x.id === r.id); if (!q) return;
     const d = el('details', { class: `ans ${r.ok ? 'ok' : 'ng'}` },
       el('summary', {}, `${r.ok ? '⭕' : '❌'} 問${i + 1}　`, el('span', { class: 'muted' }, q.chapter)),
-      el('p', { class: 'q-text' }, q.question),
+      el('p', { class: 'q-text' }, q.question), qImg(q),
       el('ol', { class: 'ans-choices', type: 'a' }, q.choices.map((t, k) => {
         const key = 'abcde'[k];
         const cls = q.answer.split(',').includes(key) ? 'right' : r.mine.split(',').includes(key) ? 'wrong' : '';
@@ -1086,6 +1086,12 @@ routes.terms = () => {
   );
 };
 
+// 図を見て答える問題の図（q.image は app/ からの相対パス。タップで大きく見られる）
+function qImg(q) {
+  if (!q.image) return null;
+  return el('a', { href: q.image, target: '_blank', rel: 'noopener', class: 'q-img-link' },
+    el('img', { src: q.image, alt: q.imageAlt || '問題の図', class: 'q-img', loading: 'lazy' }));
+}
 function peepBox(text) {
   return el('div', { class: 'peep' },
     el('img', { src: 'icon-192.png', alt: '', class: 'peep-ic' }),

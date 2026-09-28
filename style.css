@@ -316,3 +316,7 @@ table.contents { border-collapse: collapse; width: 100%; font-size: 13px; }
 table.contents th, table.contents td { padding: 6px 4px; border-bottom: 1px solid var(--line, #ddd); text-align: left; vertical-align: top; }
 table.contents .num { text-align: right; white-space: nowrap; }
 table.contents thead th { font-size: 12px; }
+
+/* 図を見て答える問題 */
+.q-img-link { display: block; margin: 10px 0 4px; }
+.q-img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
