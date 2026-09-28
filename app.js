@@ -981,7 +981,7 @@ function ownList() {
       qs.length ? qs.map(q => ownRow(q.chapter, q.question, () => go('own_q', q.id), () => { state.own.questions = qs.filter(x => x !== q); delete state.quiz[q.id]; save(); go('own', null, false); }))
         : el('p', { class: 'muted' }, 'まだありません。作った問題は「問題を解く」で、その分野に混ざって出ます。')),
     el('div', { class: 'card-box' }, el('h2', {}, `自作の暗記カード（${cs.length}）`),
-      cs.length ? cs.map(c => ownRow(c.category, c.front, () => go('own_c', c.id), () => { state.own.cards = cs.filter(x => x !== c); delete state.cards[c.id]; save(); go('own', null, false); }))
+      cs.length ? cs.map(c => ownRow(c.chapter || c.category, c.front, () => go('own_c', c.id), () => { state.own.cards = cs.filter(x => x !== c); delete state.cards[c.id]; save(); go('own', null, false); }))
         : el('p', { class: 'muted' }, 'まだありません。作ったカードは「暗記カード」で出ます。')),
   );
 }
@@ -1026,9 +1026,10 @@ routes.own_q = id => {
 routes.own_c = id => {
   const cur = state.own.cards.find(c => c.id === id);
   setTitle(cur ? '自作のカードを直す' : '暗記カードをつくる');
-  const cats = uniq(['自作'].concat(allCards().map(c => c.category)));
-  const cat = el('input', { type: 'text', list: 'own-cats', placeholder: '例：薬物療法' }); cat.value = cur?.category || '自作';
-  const dl = el('datalist', { id: 'own-cats' }, cats.map(c => el('option', { value: c })));
+  // 分野は20章から選ぶ（入力候補リストはスマホで閉じなくなることがあるので使わない）
+  const NONE = '';
+  const ch = el('select', {}, el('option', { value: NONE }, '分野なし（自作）'),
+    CHAPTERS.map(c => el('option', { value: c, selected: cur?.chapter === c }, c)));
   const fr = el('textarea', { rows: 2, placeholder: '問い（例：β2刺激薬の代表的な副作用は？）' }); fr.value = cur?.front || '';
   const bk = el('textarea', { rows: 2, placeholder: '答え' }); bk.value = cur?.back || '';
   const nt = el('textarea', { rows: 2, placeholder: '補足（なくてもOK）' }); nt.value = cur?.note || '';
@@ -1036,11 +1037,11 @@ routes.own_c = id => {
     e.preventDefault();
     if (!fr.value.trim() || !bk.value.trim()) return alertInline('問いと答えを入れてくださいぴーぷ');
     if (!cur && !canAddOwnCard()) return alertInline(`アプリの合言葉なしで作れるカードは${FREE_OWN_CARDS}枚までですぴーぷ`);
-    const c = { id: cur?.id || newId('own-c'), category: cat.value.trim() || '自作', front: fr.value.trim(), back: bk.value.trim(), note: nt.value.trim(), source: '', checked: '', free: true, own: true };
+    const c = { id: cur?.id || newId('own-c'), category: '自作', chapter: ch.value || undefined, front: fr.value.trim(), back: bk.value.trim(), note: nt.value.trim(), source: '', checked: '', free: true, own: true };
     if (cur) state.own.cards[state.own.cards.indexOf(cur)] = c; else state.own.cards.push(c);
     save(); backBtn.click();
   } },
-    field('カテゴリ（今あるものを選ぶか、新しく入力）', cat), dl,
+    field('分野', ch),
     field('問い', fr), field('答え', bk), field('補足', nt),
     el('button', { class: 'btn wide', type: 'submit' }, cur ? '保存する' : 'つくる')));
 };
