@@ -69,6 +69,7 @@ function normalizeState(st) {
     settings: st.settings && typeof st.settings === 'object' ? st.settings : null,
     reward: typeof st.reward === 'string' ? st.reward : '',
     exams: arr(st.exams), examRun: st.examRun && Array.isArray(st.examRun.ids) ? st.examRun : null,
+    quizRun: st.quizRun && Array.isArray(st.quizRun.ids) ? st.quizRun : null,
     log: arr(st.log).filter(e => e && typeof e.id === 'string'), ownInStats: !!st.ownInStats,
   };
 }
@@ -205,6 +206,8 @@ function home() {
   $('#peep-hello').textContent = HELLO[Math.floor(Math.random() * HELLO.length)];
   renderReward($('#reward'));
   renderWeak($('#weak'));
+  const rb = resumeBox(() => go('home', null, false));
+  if (rb) $('#weak').after(rb);
   view.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
   const st = $('#unlock-state');
   const form = $('#unlock-form');
@@ -482,6 +485,7 @@ function quizMenu() {
   } }, '全部えらぶ／はずす');
 
   view.append(
+    resumeBox(() => go('quiz', null, false)),
     el('div', { class: 'quiz-top' },
       el('p', { class: 'muted' }, '分野を選んで、スタート。'),
       el('button', { class: 'btn ghost set-btn', onclick: () => go('quiz_settings') }, '⚙️ 設定')),
@@ -535,11 +539,41 @@ routes.quiz_settings = () => {
       el('button', { class: 'btn', onclick: () => backBtn.click() }, '決めてもどる')),
   );
 };
-routes.quiz_play = qs => {
+// 途中でやめた「問題を解く」の続き（state.quizRun）。解いた問題が1問以上あり、まだ全部は解いていないもの
+function pendingQuiz() {
+  const r = state.quizRun;
+  if (!r) return null;
+  const qs = r.ids.map(id => allQuestions().find(q => q.id === id)).filter(Boolean);
+  const answered = (r.done || []).filter(Boolean).length;
+  if (!qs.length || answered === 0 || answered >= qs.length) return null;
+  return { qs, answered, total: qs.length };
+}
+// 続きがあるときに出す確認（続けるか、捨てて新しく始めるか）
+function resumeBox(onDiscard) {
+  const p = pendingQuiz();
+  if (!p) return null;
+  return el('div', { class: 'card-box resume' },
+    el('h2', {}, '前回の続きがあります'),
+    el('p', { class: 'muted' }, `${p.total}問のうち${p.answered}問まで解いたところで、終わっています。続きから解きますか？`),
+    el('div', { class: 'row' },
+      el('button', { class: 'btn ghost', onclick: () => { state.quizRun = null; save(); onDiscard(); } }, '新しく始める'),
+      el('button', { class: 'btn', onclick: () => go('quiz_play', { resume: true }) }, '続きから解く')));
+}
+routes.quiz_play = arg => {
   setTitle('問題を解く');
   // done[i] = { mine: ['a'], ok: true }：解いた問題は、あとから戻って見直せる
-  let i = 0;
-  const done = [];
+  let qs, i = 0, done = [];
+  if (arg && arg.resume && pendingQuiz()) {
+    const r = state.quizRun;
+    qs = r.ids.map(id => allQuestions().find(q => q.id === id)).filter(Boolean);
+    done = qs.map(q => (r.done || [])[r.ids.indexOf(q.id)] || null);
+    i = Math.max(0, done.findIndex(d => !d));
+  } else {
+    qs = arg;
+  }
+  // 1問答えるたび・移動するたびに、途中の状態を保存しておく（アプリを閉じても続きから解けるように）
+  const keepRun = () => { state.quizRun = { ids: qs.map(q => q.id), done: done.map(d => d || null), cur: i }; save(); };
+  keepRun();
   const keys = 'abcde';
   const render = () => {
     view.innerHTML = '';
@@ -580,7 +614,7 @@ routes.quiz_play = qs => {
       if (done[i]) return;
       const ok = chosen.size === answers.length && answers.every(a => chosen.has(a));
       done[i] = { mine: [...chosen], ok };
-      recordAnswer(q, ok); save();
+      recordAnswer(q, ok); keepRun();
       submit.remove();
       showResult(ok);
     } }, 'こたえる');
@@ -598,6 +632,7 @@ routes.quiz_play = qs => {
   };
   const finish = () => {
     view.innerHTML = '';
+    if (done.filter(Boolean).length >= qs.length) { state.quizRun = null; save(); } // 全部解いたら続きは消す
     const score = done.filter(d => d && d.ok).length;
     const r = score / qs.length;
     const line = PEEP_RESULT.find(([th]) => r >= th)[1];
