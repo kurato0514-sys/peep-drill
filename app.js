@@ -1224,12 +1224,23 @@ routes.terms = () => {
 // 解説の図（q.expImage は app/ からの相対パス。答えたあとに解説の下に出す。タップで大きく見られる）
 function expImg(q) {
   if (!q.expImage) return null;
-  return el('a', { href: q.expImage, target: '_blank', rel: 'noopener', class: 'q-img-link' },
+  return el('button', { type: 'button', class: 'q-img-link', 'aria-label': '図を大きく見る', onclick: e => { e.stopPropagation(); zoomImg(q.expImage, q.expImageAlt || '解説の図'); } },
     el('img', { src: q.expImage, alt: q.expImageAlt || '解説の図', class: 'q-img' }));
+}
+// 図を押したら、同じ画面の中で大きく見せる（別タブで開くと、埋めこみ先によってはページが見つからないため）
+function zoomImg(src, alt) {
+  const close = () => { box.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  const box = el('div', { class: 'zoom', role: 'dialog', 'aria-label': alt, onclick: close },
+    el('img', { src, alt }),
+    el('button', { type: 'button', class: 'zoom-close', onclick: close }, '× とじる'));
+  document.body.append(box);
+  document.addEventListener('keydown', onKey);
+  box.querySelector('.zoom-close').focus();
 }
 function qImg(q) {
   if (!q.image) return null;
-  return el('a', { href: q.image, target: '_blank', rel: 'noopener', class: 'q-img-link' },
+  return el('button', { type: 'button', class: 'q-img-link', 'aria-label': '図を大きく見る', onclick: e => { e.stopPropagation(); zoomImg(q.image, q.imageAlt || '問題の図'); } },
     el('img', { src: q.image, alt: q.imageAlt || '問題の図', class: 'q-img' }));
 }
 function peepBox(text) {
