@@ -687,7 +687,7 @@ routes.quiz_play = arg => {
       after.append(
         el('div', { class: `result ${ok ? 'ok' : 'ng'}` }, ok ? '⭕ 正解' : `❌ 不正解（正解：${answers.join('・')}）`),
         next,
-        q.explanation ? el('p', { class: 'explain' }, q.explanation) : null,
+        q.explanation ? el('p', { class: 'explain' }, q.explanation) : null, expImg(q),
         q.peep ? peepBox(q.peep) : null,
         q.source ? el('p', { class: 'muted' }, `根拠：${q.source}（${q.checked}確認）`) : null,
         i > 0 ? el('button', { class: 'btn ghost wide', style: 'margin-top:8px', onclick: () => { i--; render(); } }, '‹ 前の問題') : null);
@@ -947,7 +947,7 @@ routes.exam_result = idx => {
         return el('li', { class: cls }, t);
       })),
       el('p', {}, `正解：${q.answer.split(',').join('・')}　あなた：${r.mine ? r.mine.split(',').join('・') : '未解答'}`),
-      q.explanation ? el('p', { class: 'explain' }, q.explanation) : null,
+      q.explanation ? el('p', { class: 'explain' }, q.explanation) : null, expImg(q),
       q.peep ? peepBox(q.peep) : null);
     list.append(d);
   });
@@ -1221,6 +1221,12 @@ routes.terms = () => {
 };
 
 // 図を見て答える問題の図（q.image は app/ からの相対パス。タップで大きく見られる）
+// 解説の図（q.expImage は app/ からの相対パス。答えたあとに解説の下に出す。タップで大きく見られる）
+function expImg(q) {
+  if (!q.expImage) return null;
+  return el('a', { href: q.expImage, target: '_blank', rel: 'noopener', class: 'q-img-link' },
+    el('img', { src: q.expImage, alt: q.expImageAlt || '解説の図', class: 'q-img', loading: 'lazy' }));
+}
 function qImg(q) {
   if (!q.image) return null;
   return el('a', { href: q.image, target: '_blank', rel: 'noopener', class: 'q-img-link' },
