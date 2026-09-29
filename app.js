@@ -680,22 +680,26 @@ routes.quiz_play = arg => {
         else if (chosen.has(keys[k])) b.classList.add('wrong');
       });
       const nextLabel = i + 1 < qs.length ? (done[i + 1] ? '次の問題を見る' : '次の問題へ') : '結果を見る';
+      // 次へは正解・不正解のすぐ下（こたえるボタンがあった位置）に出し、スクロールせずに押せるようにする。前の問題はいちばん下
+      const next = el('button', { class: 'btn wide', style: 'margin-top:8px', onclick: () => { i++; i < qs.length ? render() : finish(); } }, nextLabel);
       after.append(
         el('div', { class: `result ${ok ? 'ok' : 'ng'}` }, ok ? '⭕ 正解' : `❌ 不正解（正解：${answers.join('・')}）`),
+        next,
         q.explanation ? el('p', { class: 'explain' }, q.explanation) : null,
         q.peep ? peepBox(q.peep) : null,
         q.source ? el('p', { class: 'muted' }, `根拠：${q.source}（${q.checked}確認）`) : null,
-        el('div', { class: 'row' },
-          i > 0 ? el('button', { class: 'btn ghost', onclick: () => { i--; render(); } }, '‹ 前の問題') : null,
-          el('button', { class: 'btn', onclick: () => { i++; i < qs.length ? render() : finish(); } }, nextLabel)));
+        i > 0 ? el('button', { class: 'btn ghost wide', style: 'margin-top:8px', onclick: () => { i--; render(); } }, '‹ 前の問題') : null);
+      return next;
     };
+    // 答える前だけ出す「前の問題を見直す」（答えたら消して、いちばん下の「前の問題」に任せる）
+    const prevBefore = !rec && i > 0 ? el('button', { class: 'btn ghost wide', style: 'margin-top:8px', onclick: () => { i--; render(); } }, '‹ 前の問題を見直す') : null;
     const submit = el('button', { class: 'btn wide', disabled: true, onclick: () => {
       if (done[i]) return;
       const ok = chosen.size === answers.length && answers.every(a => chosen.has(a));
       done[i] = { mine: [...chosen], ok };
       recordAnswer(q, ok); keepRun();
-      submit.remove();
-      showResult(ok);
+      submit.remove(); prevBefore?.remove();
+      showResult(ok).scrollIntoView({ block: 'nearest' });
     } }, 'こたえる');
     view.append(
       el('div', { class: 'progress' }, `${q.own ? '✍️自作　' : ''}${isArticle(q) ? '📝記事　' : ''}${q.chapter}　${i + 1} / ${qs.length}${rec ? '　（見直し中）' : ''}`),
@@ -704,7 +708,7 @@ routes.quiz_play = arg => {
         multi ? el('p', { class: 'muted' }, `${answers.length}つ選んでください`) : null,
         el('div', { class: 'choices' }, btns),
         rec ? null : submit,
-        !rec && i > 0 ? el('button', { class: 'btn ghost wide', style: 'margin-top:8px', onclick: () => { i--; render(); } }, '‹ 前の問題を見直す') : null,
+        prevBefore,
         after));
     if (rec) showResult(rec.ok);
     window.scrollTo(0, 0);
