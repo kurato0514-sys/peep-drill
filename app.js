@@ -1191,7 +1191,7 @@ routes.contents = () => {
   view.append(
     el('p', { class: 'muted' }, '暗記カードは、覚えることが多い章ほど枚数を多くしています。記事の問題とカードは、その章の有料記事（またはマガジン）の合言葉で足されます。'),
     el('div', { class: 'card-box table-wrap' }, el('table', { class: 'contents' },
-      el('thead', {}, row(['章', 'アプリ 問題', 'アプリ カード', '記事 問題', '記事 カード'], true)),
+      el('thead', {}, row(['章', 'アプリ\n問題', 'アプリ\nカード', '記事\n問題', '記事\nカード'], true)),
       el('tbody', {}, CHAPTERS.map(c => row([c, n(c, 'app_q'), n(c, 'app_c'), n(c, 'art_q'), n(c, 'art_c')]))),
       el('tfoot', {}, row(['合計', sum('app_q'), sum('app_c'), sum('art_q'), sum('art_c')], true)))),
     el('p', { class: 'muted' }, 'アプリのカードの数には、無料のお試し分も含みます。問題の数には、お試しの5問は入っていません（別にあります）。'),
