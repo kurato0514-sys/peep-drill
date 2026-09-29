@@ -667,9 +667,11 @@ routes.quiz_play = arg => {
         if (done[i]) return;
         const key = keys[k];
         if (!multi) { chosen.clear(); btns.forEach(x => x.setAttribute('aria-pressed', 'false')); }
+        // 「2つ選べ」は2つまでしか選べない。答えられるのは、ちょうどその数を選んだときだけ
+        else if (!chosen.has(key) && chosen.size >= answers.length) return;
         chosen.has(key) ? chosen.delete(key) : chosen.add(key);
         b.setAttribute('aria-pressed', chosen.has(key));
-        submit.disabled = chosen.size === 0;
+        submit.disabled = chosen.size !== answers.length;
       });
       return b;
     });
@@ -862,6 +864,7 @@ routes.exam_play = () => {
       b.addEventListener('click', () => {
         const key = keys[k];
         if (!multi) { mine.clear(); btns.forEach(x => x.setAttribute('aria-pressed', 'false')); }
+        else if (!mine.has(key) && mine.size >= answers.length) return; // 「2つ選べ」は2つまで
         mine.has(key) ? mine.delete(key) : mine.add(key);
         b.setAttribute('aria-pressed', mine.has(key));
         run.answers[q.id] = [...mine]; save(); renderBar(); renderNav();
