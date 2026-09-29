@@ -1183,6 +1183,63 @@ const confirmInline = { armed: false };
 
 // ---------- 利用規約 ----------
 // 章ごとに、アプリと記事で何問・何枚あるか（購入前に確かめられるように）
+// ---------- さがす（問題と暗記カードを言葉で探す） ----------
+// 全角・半角、大文字・小文字、CO₂ と CO2 のような下付き文字の違いは同じとみなす
+const normQ = t => (t || '').normalize('NFKC').toLowerCase();
+let searchWord = '';
+routes.search = () => {
+  setTitle('さがす');
+  const input = el('input', { type: 'text', id: 'search-word', placeholder: '例：スパイロ、PEEP、カプノ', autocomplete: 'off', enterkeyhint: 'search' });
+  input.value = searchWord;
+  const out = el('div');
+  const hl = (text, words) => {
+    // 見つかった言葉を太字にする（前後を短く切って見せる）
+    const t = text || ''; const n = normQ(t); const w = words[0];
+    const i = w ? n.indexOf(w) : -1;
+    const start = Math.max(0, i - 30), end = Math.min(t.length, (i < 0 ? 0 : i) + 70);
+    const s = (start > 0 ? '…' : '') + t.slice(start, end) + (end < t.length ? '…' : '');
+    if (i < 0) return document.createTextNode(s);
+    const ns = normQ(s); const j = ns.indexOf(w);
+    if (j < 0) return document.createTextNode(s);
+    const f = document.createDocumentFragment();
+    f.append(s.slice(0, j), el('b', {}, s.slice(j, j + w.length)), s.slice(j + w.length));
+    return f;
+  };
+  const render = () => {
+    searchWord = input.value;
+    const words = normQ(input.value).split(/\s+/).filter(Boolean);
+    out.innerHTML = '';
+    if (!words.length) {
+      out.append(el('p', { class: 'muted' }, '言葉を入れると、問題文・選択肢・解説と、暗記カードから探します。スペースで区切ると、全部をふくむものだけを出します。'));
+      return;
+    }
+    const hit = t => words.every(w => normQ(t).includes(w));
+    const qText = q => [q.question, ...(q.choices || []), q.explanation, q.chapter].join(' ');
+    const cText = c => [c.front, c.back, c.cloze, c.note, c.chapter, c.category].join(' ');
+    const qs = allQuestions().filter(q => hit(qText(q)));
+    const cs = allCards().filter(c => hit(cText(c)));
+    out.append(el('p', { class: 'muted' }, `問題 ${qs.length}問・暗記カード ${cs.length}枚が見つかりました。`));
+    if (qs.length) out.append(el('div', { class: 'card-box' },
+      el('div', { class: 'quiz-top' }, el('h2', {}, `問題（${qs.length}）`),
+        el('button', { class: 'btn set-btn', onclick: () => go('quiz_play', qs.slice()) }, '全部解く')),
+      qs.slice(0, 100).map(q => el('button', { class: 'hist-row stat', onclick: () => go('quiz_play', [q]) },
+        el('span', {}, el('span', { class: 'muted' }, `${isArticle(q) ? '📝記事　' : ''}${q.chapter}`), el('br'), hl(q.question, words)),
+        el('span', { class: 'muted' }, '解く ›')))));
+    if (cs.length) out.append(el('div', { class: 'card-box' },
+      el('div', { class: 'quiz-top' }, el('h2', {}, `暗記カード（${cs.length}）`),
+        el('button', { class: 'btn set-btn', onclick: () => go('cards_play', cs.slice()) }, '全部めくる')),
+      cs.slice(0, 100).map(c => el('button', { class: 'hist-row stat', onclick: () => go('cards_play', [c]) },
+        el('span', {}, el('span', { class: 'muted' }, cardKey(c)), el('br'), hl(c.front || (c.cloze || '').replace(/\{\{(.+?)(\|.*?)?\}\}/g, '［ ］'), words)),
+        el('span', { class: 'muted' }, 'めくる ›')))));
+    if (qs.length > 100 || cs.length > 100) out.append(el('p', { class: 'muted' }, '一覧には先頭の100件まで出しています。「全部解く」「全部めくる」は全部が対象です。'));
+    if (!unlocked) out.append(el('p', { class: 'muted' }, '🔒 まだひらいていない問題・カードは、合言葉を入れると探せるようになります。'));
+  };
+  input.addEventListener('input', render);
+  view.append(el('div', { class: 'card-box' }, el('label', { class: 'field', for: 'search-word' }, el('span', {}, '探す言葉'), input)), out);
+  render();
+  input.focus();
+};
+
 routes.contents = () => {
   setTitle('中身の一覧');
   const n = (c, k) => data.contents[c]?.[k] ?? 0;
