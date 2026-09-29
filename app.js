@@ -1225,12 +1225,12 @@ routes.terms = () => {
 function expImg(q) {
   if (!q.expImage) return null;
   return el('a', { href: q.expImage, target: '_blank', rel: 'noopener', class: 'q-img-link' },
-    el('img', { src: q.expImage, alt: q.expImageAlt || '解説の図', class: 'q-img', loading: 'lazy' }));
+    el('img', { src: q.expImage, alt: q.expImageAlt || '解説の図', class: 'q-img' }));
 }
 function qImg(q) {
   if (!q.image) return null;
   return el('a', { href: q.image, target: '_blank', rel: 'noopener', class: 'q-img-link' },
-    el('img', { src: q.image, alt: q.imageAlt || '問題の図', class: 'q-img', loading: 'lazy' }));
+    el('img', { src: q.image, alt: q.imageAlt || '問題の図', class: 'q-img' }));
 }
 function peepBox(text) {
   return el('div', { class: 'peep' },
