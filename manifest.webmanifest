@@ -27,5 +27,48 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "id": "/peep-drill/",
+  "orientation": "portrait",
+  "categories": [
+    "education",
+    "medical"
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/home.png",
+      "sizes": "585x1170",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "ホーム画面"
+    },
+    {
+      "src": "screenshots/quiz.png",
+      "sizes": "585x1170",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "問題を解く"
+    },
+    {
+      "src": "screenshots/cards.png",
+      "sizes": "585x734",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "暗記カード"
+    },
+    {
+      "src": "screenshots/stats.png",
+      "sizes": "585x1170",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "マイページ（正解率）"
+    },
+    {
+      "src": "screenshots/exam.png",
+      "sizes": "585x1170",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "試験モード"
+    }
   ]
 }
